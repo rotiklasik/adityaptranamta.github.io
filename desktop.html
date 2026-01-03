@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aditya's OS Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for glass feel */
+        /* Windows 10 style scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+            background-color: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .glass-dark {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .window-shadow {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* icon additions */
+        .icon-text-shadow {
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+        }
+
+        .desktop-icon:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Windows 10 control buttons */
+        .win-btn {
+            width: 46px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.1s;
+        }
+
+        .win-btn:hover {
+            background-color: #e5e5e5;
+        }
+
+        .win-btn.close-btn:hover {
+            background-color: #e81123;
+            color: white;
+        }
+
+        .win-btn svg {
+            width: 10px;
+            height: 10px;
+        }
+
+        .shortcut-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 1.25rem;
+            /* 20px */
+            height: 1.25rem;
+            background: white;
+            border: 1px solid gray;
+            border-radius: 4px;
+            /* Slightly rounded */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .shortcut-arrow {
+            width: 10px;
+            height: 10px;
+            fill: black;
+            transform: rotate(-45deg);
+            /* Standard arrow tilt */
+        }
+    </style>
+</head>
+
+<body class="h-screen w-screen overflow-hidden bg-cover bg-center font-sans selection:bg-blue-500 selection:text-white"
+    style="background-image: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');">
+
+    <!-- Desktop Icons Container -->
+    <div id="desktop-grid" class="p-2 grid grid-cols-1 gap-2 w-28 fixed top-0 left-0 z-0 select-none">
+        <!-- Icons injected by JS -->
+    </div>
+
+    <!-- Window Area (Where windows live) -->
+    <div id="window-area" class="absolute inset-0 pointer-events-none z-10"></div>
+
+    <!-- Start Menu -->
+    <div id="start-menu"
+        class="fixed bottom-12 left-2 w-80 h-96 glass rounded-t-lg shadow-2xl transform translate-y-[120%] transition-transform duration-300 z-50 flex flex-col p-4">
+        <div class="flex items-center space-x-3 mb-6">
+            <div
+                class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                AP</div>
+            <span class="font-semibold text-gray-800">Aditya Putra</span>
+        </div>
+        <div class="flex-1 overflow-y-auto">
+            <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Pinned</h3>
+            <div class="grid grid-cols-4 gap-2">
+                <!-- Simple mock tiles -->
+                <div
+                    class="bg-blue-500 h-16 w-16 rounded shadow flex items-center justify-center text-white cursor-pointer hover:opacity-90">
+                    <span class="text-xs">Word</span>
+                </div>
+                <div
+                    class="bg-green-500 h-16 w-16 rounded shadow flex items-center justify-center text-white cursor-pointer hover:opacity-90">
+                    <span class="text-xs">Excel</span>
+                </div>
+                <div
+                    class="bg-sky-400 h-16 w-16 rounded shadow flex items-center justify-center text-white cursor-pointer hover:opacity-90">
+                    <span class="text-xs">Edge</span>
+                </div>
+                <div
+                    class="bg-indigo-500 h-16 w-16 rounded shadow flex items-center justify-center text-white cursor-pointer hover:opacity-90">
+                    <span class="text-xs">Teams</span>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Recommended</h3>
+                <div class="text-sm text-gray-700 hover:bg-white/50 p-2 rounded cursor-pointer">
+                    <span class="font-bold">Resume.pdf</span><br>
+                    <span class="text-xs text-gray-500">Recently added</span>
+                </div>
+            </div>
+        </div>
+        <div class="border-t border-gray-300 pt-3 flex justify-between">
+            <button class="p-2 hover:bg-white/50 rounded transition text-sm flex items-center gap-2">
+                <div class="w-2 h-2 bg-red-500 rounded-full"></div> Power
+            </button>
+            <button class="p-2 hover:bg-white/50 rounded transition text-sm">Settings</button>
+        </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div class="absolute bottom-0 w-full h-12 glass-dark flex items-center px-2 z-50 space-x-2">
+        <button id="start-btn" class="p-2 hover:bg-white/10 rounded transition duration-200">
+            <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                    d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4h-13.051M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801" />
+            </svg>
+        </button>
+
+        <!-- Active App Icons Area -->
+        <div id="taskbar-apps" class="flex items-center space-x-1 pl-2 border-l border-white/20 h-8">
+            <!-- App icons injected here -->
+        </div>
+
+        <!-- Clock (Right side) -->
+        <div class="ml-auto flex flex-col items-end text-white text-xs pr-2 cursor-default">
+            <span id="clock-time">12:00 PM</span>
+            <span id="clock-date">10/10/2023</span>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA (UPDATED FROM CV) ---
+        const apps = [
+            {
+                id: 'about',
+                title: 'About Me',
+                icon: 'https://img.icons8.com/color/96/person-male.png',
+                color: 'bg-blue-100',
+                type: 'text',
+                content: `
+                    <div class="p-8 max-w-2xl mx-auto font-sans text-gray-800">
+                        <h1 class="text-4xl font-bold mb-2 text-blue-900">Aditya Putra Anamta</h1>
+                        <p class="text-md text-gray-600 font-medium mb-6">Digital Business Student | Creative & Tech Specialist</p>
+                        
+                        <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500 mb-6">
+                            <p class="italic text-gray-700">
+                                "I combine design skills with code to build functional brands and web products."
+                            </p>
+                        </div>
+
+                        <img src="images/Portfolio Aditya Putra Anamta header.png" class="w-full h-auto rounded-lg shadow-md mb-6" alt="Aditya Putra Anamta">
+
+                        <div class="mb-6">
+                            <h3 class="font-bold text-gray-900 border-b border-gray-300 pb-1 mb-2">Summary</h3>
+                            <p class="leading-relaxed text-sm">
+                                Digital Business student (5th Semester) with a technical background in Software Engineering. I combine design skills with code to build functional brands and web products. Currently running an automation agency and a clothing brand while managing corporate projects for a multi-industry group. Practical experience in UI/UX, front-end development, and project management.
+                            </p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                            <div>
+                                <h3 class="font-bold text-gray-900 border-b border-gray-300 pb-1 mb-2">Education</h3>
+                                <ul class="text-sm list-disc pl-4 space-y-2">
+                                    <li>
+                                        <strong>Cyber University</strong> (Digital Business)<br>
+                                        <span class="text-xs text-gray-500">2023 – Present | Scholarship: "Cakap Digital"</span>
+                                    </li>
+                                    <li>
+                                        <strong>Universiti Teknologi PETRONAS</strong> (Fintech Exchange)<br>
+                                        <span class="text-xs text-gray-500">2025 | International Student Exchange</span>
+                                    </li>
+                                    <li>
+                                        <strong>SMK Citra Negara</strong> (Software Engineering)<br>
+                                        <span class="text-xs text-gray-500">2020 – 2023 | Java, SQL, Web Dev</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900 border-b border-gray-300 pb-1 mb-2">Contact & Skills</h3>
+                                <ul class="text-sm space-y-1 mb-4">
+                                    <li>📧 adityawealthyopt2281@gmail.com</li>
+                                    <li>📞 +62 858-8057-4423</li>
+                                    <li>📍 Jakarta, Indonesia</li>
+                                </ul>
+                                <h4 class="font-bold text-xs text-gray-700 uppercase">Skills</h4>
+                                <div class="flex flex-wrap gap-1 mt-1">
+                                    <span class="px-2 py-0.5 bg-gray-200 rounded text-xs">Adobe Illustrator</span>
+                                    <span class="px-2 py-0.5 bg-gray-200 rounded text-xs">Figma</span>
+                                    <span class="px-2 py-0.5 bg-gray-200 rounded text-xs">HTML/CSS</span>
+                                    <span class="px-2 py-0.5 bg-gray-200 rounded text-xs">Project Mgmt</span>
+                                    <span class="px-2 py-0.5 bg-gray-200 rounded text-xs">AI Tools</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'experience',
+                title: 'Experiences',
+                icon: 'https://img.icons8.com/color/96/briefcase.png',
+                color: 'bg-yellow-100',
+                type: 'list',
+                content: `
+                    <div class="p-8 max-w-3xl mx-auto">
+                        <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b-2 border-gray-200 pb-2">Professional Experience</h2>
+                        
+                        <div class="mb-8 relative pl-6 border-l-2 border-blue-200">
+                            <div class="absolute -left-[9px] top-0 w-4 h-4 bg-blue-500 rounded-full"></div>
+                            <h3 class="font-bold text-xl text-blue-900">Founder & Lead Creative</h3>
+                            <div class="text-gray-500 text-sm font-medium">Cakra Labs (Creative AI Automation Agency) | 2024 - Present</div>
+                            <ul class="list-disc pl-5 mt-2 text-sm text-gray-700 space-y-1">
+                                <li>Founded an agency focused on combining manual design with AI tools for speed and precision.</li>
+                                <li>Built and deployed the agency website and client prototypes (FinShield, Cerahi Usaha) using HTML/CSS.</li>
+                                <li>Managed digital strategy and documentation services for B2B clients.</li>
+                                <li>Developed "Digital Alchemy" workflow to reduce production time for visual assets.</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-8 relative pl-6 border-l-2 border-green-200">
+                            <div class="absolute -left-[9px] top-0 w-4 h-4 bg-green-500 rounded-full"></div>
+                            <h3 class="font-bold text-xl text-green-900">Project Manager & MarComm</h3>
+                            <div class="text-gray-500 text-sm font-medium">PT. Syauqia Berkah Makmur (SBM Group) | 2024 - 2025</div>
+                            <ul class="list-disc pl-5 mt-2 text-sm text-gray-700 space-y-1">
+                                <li>Managed marketing projects across four different business units: Laundry, Property, Banking Agent (BRILink), and Education.</li>
+                                <li>Designed and maintained the corporate website (ptsbmgroup.github.io) to centralize information.</li>
+                                <li>Handled all visual communication, including copywriting, editing, and graphic design.</li>
+                                <li>Coordinated with operational teams to ensure marketing campaigns aligned with business targets.</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-8 relative pl-6 border-l-2 border-purple-200">
+                            <div class="absolute -left-[9px] top-0 w-4 h-4 bg-purple-500 rounded-full"></div>
+                            <h3 class="font-bold text-xl text-purple-900">Founder & Owner</h3>
+                            <div class="text-gray-500 text-sm font-medium">Bifidum.co (formerly Kalemia.co) | 2021 - Present</div>
+                            <ul class="list-disc pl-5 mt-2 text-sm text-gray-700 space-y-1">
+                                <li>Rebranded the business from Kalemia.co to Bifidum.co to expand from digital art into an automotive fashion brand.</li>
+                                <li>Produced high-precision vector art and vehicle decals for the automotive enthusiast market.</li>
+                                <li>Managed end-to-end operations, from product design and vendor sourcing to social media marketing and sales.</li>
+                                <li>Sold digital assets and custom merchandise to a niche community.</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-8 relative pl-6 border-l-2 border-yellow-200">
+                            <div class="absolute -left-[9px] top-0 w-4 h-4 bg-yellow-500 rounded-full"></div>
+                            <h3 class="font-bold text-xl text-yellow-900">Communication and Information Department</h3>
+                            <div class="text-gray-500 text-sm font-medium">BEM Cyber University | 2024 - 2025</div>
+                            <ul class="list-disc pl-5 mt-2 text-sm text-gray-700 space-y-1">
+                                <li>Designer on the Student Executive Board (Badan Eksekutif Mahasiswa) at Cyber University.</li>
+                                <li>Created posters, banners, certificates, and monthly Instagram content for organizational needs.</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-8 relative pl-6 border-l-2 border-red-200">
+                            <div class="absolute -left-[9px] top-0 w-4 h-4 bg-red-500 rounded-full"></div>
+                            <h3 class="font-bold text-xl text-red-900">Graphic Designer (Volunteer)</h3>
+                            <div class="text-gray-500 text-sm font-medium">Lentera Cakrawala Nusantara | 2024 - 2025</div>
+                            <ul class="list-disc pl-5 mt-2 text-sm text-gray-700 space-y-1">
+                                <li>Created visual assets for community service programs focused on social impact.</li>
+                                <li>Ensured consistent visual identity across social media and event materials.</li>
+                            </ul>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'projects',
+                title: 'Project Explorer',
+                icon: 'https://img.icons8.com/color/96/folder-invoices--v1.png',
+                color: 'bg-yellow-200',
+                type: 'explorer',
+                content: `
+                    <div class="p-4 h-full flex flex-col">
+                        <div class="flex items-center text-sm text-gray-500 mb-4 pb-2 border-b border-gray-200">
+                            <span class="mr-2">PC</span> 
+                            <span class="mx-2">></span> 
+                            <span class="mr-2">Local Disk (C:)</span> 
+                            <span class="mx-2">></span> 
+                            <span class="font-bold text-gray-800">Projects</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-4">
+                            <a href="https://cakralabs.me/" target="_blank" class="flex flex-col items-center hover:bg-blue-50 p-4 rounded cursor-pointer group transition">
+                                <div class="text-5xl mb-2 group-hover:scale-110 transition-transform">🧪</div>
+                                <span class="text-sm font-medium text-center group-hover:text-blue-600">Cakra Labs</span>
+                                <span class="text-xs text-gray-400">Website</span>
+                            </a>
+                            <a href="https://instagram.com/bifidum.co" target="_blank" class="flex flex-col items-center hover:bg-blue-50 p-4 rounded cursor-pointer group transition">
+                                <div class="text-5xl mb-2 group-hover:scale-110 transition-transform">👕</div>
+                                <span class="text-sm font-medium text-center group-hover:text-blue-600">Bifidum.co</span>
+                                <span class="text-xs text-gray-400">Auto Fashion</span>
+                            </a>
+                            <a href="https://ptsbmgroup.github.io/" target="_blank" class="flex flex-col items-center hover:bg-blue-50 p-4 rounded cursor-pointer group transition">
+                                <div class="text-5xl mb-2 group-hover:scale-110 transition-transform">🏢</div>
+                                <span class="text-sm font-medium text-center group-hover:text-blue-600">PT SBM Group</span>
+                                <span class="text-xs text-gray-400">Corporate Web</span>
+                            </a>
+                            <a href="https://finshieldtech.github.io" target="_blank" class="flex flex-col items-center hover:bg-blue-50 p-4 rounded cursor-pointer group transition">
+                                <div class="text-5xl mb-2 group-hover:scale-110 transition-transform">🛡️</div>
+                                <span class="text-sm font-medium text-center group-hover:text-blue-600">FinShield</span>
+                                <span class="text-xs text-gray-400">Prototype</span>
+                            </a>
+                            <a href="https://myuang.vercel.app/" target="_blank" class="flex flex-col items-center hover:bg-blue-50 p-4 rounded cursor-pointer group transition">
+                                <div class="text-5xl mb-2 group-hover:scale-110 transition-transform">📱</div>
+                                <span class="text-sm font-medium text-center group-hover:text-blue-600">MyUang</span>
+                                <span class="text-xs text-gray-400">App</span>
+                            </a>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'game',
+                title: 'Voxel Farm (Game)',
+                icon: 'https://img.icons8.com/color/96/minecraft-pickaxe.png',
+                color: 'bg-green-200',
+                type: 'iframe',
+                src: 'game.html'
+            }
+        ];
+
+        // --- STATE ---
+        let zIndexCounter = 100;
+        const openWindows = {}; // { id: DOMElement }
+
+        // --- DOM ELEMENTS ---
+        const desktopGrid = document.getElementById('desktop-grid');
+        const windowArea = document.getElementById('window-area');
+        const taskbarApps = document.getElementById('taskbar-apps');
+        const startMenu = document.getElementById('start-menu');
+        const startBtn = document.getElementById('start-btn');
+
+        // --- INITIALIZATION ---
+        function init() {
+            // Render Desktop Icons
+            apps.forEach(app => {
+                const icon = document.createElement('div');
+                // Increased width to w-[96px] (w-24) and removed fixed height h-[86px] to allow text growth
+                icon.className = 'desktop-icon flex flex-col items-center justify-start cursor-pointer group p-1 border border-transparent transition min-h-[86px] w-24 mb-2';
+                icon.innerHTML = `
+                    <div class="relative w-12 h-12 flex items-center justify-center mb-1">
+                        <div class="text-4xl filter drop-shadow-md">${app.icon}</div>
+                        <!-- Shortcut Arrow Overlay -->
+                        <div class="shortcut-overlay">
+                            <svg class="shortcut-arrow" viewBox="0 0 24 24">
+                                <path d="M10,2 L22,14 L10,26 M22,14 L2,14" transform="rotate(45 12 12)" /> <!-- Attempting a simple arrow path -->
+                                <path d="M5,12 L19,12 M13,6 L19,12 L13,18" fill="none" stroke="black" stroke-width="3" />
+                            </svg>
+                        </div>
+                    </div>
+                    <span class="text-white text-xs mt-0.5 font-normal tracking-wide text-center leading-tight line-clamp-2 icon-text-shadow w-full break-words select-none">${app.title.replace(/\.[a-z0-9]+$/i, '')}</span>
+                `;
+                // Improved arrow SVG to look more like Windows shortcut arrow
+                const arrowSvg = `
+                <svg viewBox="0 0 100 100" class="w-full h-full p-0.5">
+                     <path d="M30,70 L70,30 M70,30 L50,30 M70,30 L70,50" style="fill:none;stroke:black;stroke-width:12;" />
+                </svg>
+                `;
+                // Re-injecting with cleaner SVG for arrow
+                icon.innerHTML = `
+                    <div class="relative w-12 h-12 flex items-center justify-center mb-1">
+                        <img src="${app.icon}" class="w-full h-full object-contain filter drop-shadow-sm" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));" alt="${app.title}">
+                    </div>
+                    <span class="text-white text-xs font-normal text-center leading-tight icon-text-shadow w-full px-1 break-words">${app.title}</span>
+                `;
+
+                icon.onclick = () => openWindow(app);
+                desktopGrid.appendChild(icon);
+            });
+
+            // Clock
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            // Start Menu
+            startBtn.onclick = (e) => {
+                e.stopPropagation();
+                startMenu.classList.toggle('translate-y-[120%]');
+                startMenu.classList.toggle('translate-y-0');
+            };
+            window.onclick = () => {
+                startMenu.classList.add('translate-y-[120%]');
+                startMenu.classList.remove('translate-y-0');
+            };
+        }
+
+        // --- WINDOW MANAGEMENT ---
+        function openWindow(app) {
+            if (openWindows[app.id]) {
+                focusWindow(openWindows[app.id]);
+                return;
+            }
+
+            // Create Window
+            const win = document.createElement('div');
+            win.className = 'absolute bg-white rounded-lg overflow-hidden flex flex-col pointer-events-auto window-shadow opacity-0 transform scale-95 transition-all duration-200';
+
+            // Default to maximized
+            win.style.top = '0';
+            win.style.left = '0';
+            win.style.width = '100%';
+            win.style.height = 'calc(100% - 48px)'; // Subtract taskbar height
+            win.style.zIndex = ++zIndexCounter;
+
+            win.dataset.isMaximized = "true"; // Track state
+
+            // Allow pointer lock for game
+            const contentHtml = app.type === 'iframe'
+                ? `<iframe src="${app.src}" class="w-full h-full border-none bg-black" allow="pointer-lock"></iframe>`
+                : `<div class="w-full h-full overflow-y-auto bg-gray-50 p-1">${app.content}</div>`;
+
+            win.innerHTML = `
+                <!-- Title Bar -->
+                <!-- Title Bar -->
+                <div class="h-8 bg-white flex items-center justify-between pl-2 select-none border-b border-gray-200 title-bar" ondblclick="toggleMaximize(this.parentElement)">
+                    <div class="flex items-center space-x-2">
+                        <img src="${app.icon}" class="w-4 h-4">
+                        <span class="text-xs font-normal text-gray-700">${app.title}</span>
+                    </div>
+                    <div class="flex items-center h-full">
+                        <button class="win-btn" onclick="minimizeWindow(this.closest('.absolute'))">
+                            <svg viewBox="0 0 10 10"><path d="M0,5 L10,5 M0,5 L10,5" stroke="currentColor" stroke-width="1"/></svg>
+                        </button>
+                        <button class="win-btn max-btn" onclick="toggleMaximize(this.closest('.absolute'))">
+                            <svg viewBox="0 0 10 10"><path d="M1,1 L9,1 L9,9 L1,9 Z" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+                        </button>
+                        <button class="win-btn close-btn" onclick="closeWindow('${app.id}', this.closest('.absolute'))">
+                            <svg viewBox="0 0 10 10"><path d="M0,0 L10,10 M10,0 L0,10" stroke="currentColor" stroke-width="1"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <!-- Content -->
+                <div class="flex-1 relative overflow-hidden">
+                    ${contentHtml}
+                    <!-- Overlay to catch clicks over iframe for drag start -->
+                    <div class="absolute inset-0 z-10 hidden iframe-overlay"></div> 
+                </div>
+                <!-- Resizers -->
+                <div class="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-20"></div>
+            `;
+
+            windowArea.appendChild(win);
+
+            // Reveal Animation
+            requestAnimationFrame(() => {
+                win.classList.remove('opacity-0', 'scale-95');
+            });
+
+            // Store reference
+            openWindows[app.id] = win;
+
+            // Add Taskbar Icon
+            addTaskbarIcon(app, win);
+
+            // Bind Events
+            const closeBtn = win.querySelector('.close-btn');
+            closeBtn.onclick = () => closeWindow(app.id, win);
+
+            const titleBar = win.querySelector('.title-bar');
+            makeDraggable(win, titleBar);
+
+            const resizer = win.querySelector('.cursor-se-resize');
+            makeResizable(win, resizer);
+
+            win.addEventListener('mousedown', () => focusWindow(win));
+        }
+
+        function toggleMaximize(win) {
+            const maxBtnPath = win.querySelector('.max-btn path');
+
+            if (win.dataset.isMaximized === "true") {
+                // Restore
+                win.style.top = win.dataset.prevTop || '10%';
+                win.style.left = win.dataset.prevLeft || '10%';
+                win.style.width = win.dataset.prevWidth || '700px';
+                win.style.height = win.dataset.prevHeight || '500px';
+                win.classList.add('rounded-lg');
+                win.dataset.isMaximized = "false";
+                // Change icon to Square (Maximize)
+                if (maxBtnPath) maxBtnPath.setAttribute('d', 'M1,1 L9,1 L9,9 L1,9 Z');
+            } else {
+                // Maximize
+                // Save current state first
+                win.dataset.prevTop = win.style.top;
+                win.dataset.prevLeft = win.style.left;
+                win.dataset.prevWidth = win.style.width;
+                win.dataset.prevHeight = win.style.height;
+
+                win.style.top = '0';
+                win.style.left = '0';
+                win.style.width = '100%';
+                win.style.height = 'calc(100% - 48px)';
+                win.classList.remove('rounded-lg');
+                win.dataset.isMaximized = "true";
+                // Change icon to Double Square (Restore)
+                if (maxBtnPath) maxBtnPath.setAttribute('d', 'M3,1 L9,1 L9,7 M1,3 L7,3 L7,9 L1,9 Z');
+            }
+        }
+
+        function minimizeWindow(win) {
+            win.style.display = 'none';
+        }
+
+        function closeWindow(id, win) {
+            win.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                win.remove();
+                delete openWindows[id];
+                removeTaskbarIcon(id);
+            }, 200);
+        }
+
+        function focusWindow(win) {
+            win.style.zIndex = ++zIndexCounter;
+        }
+
+        function addTaskbarIcon(app, win) {
+            const btn = document.createElement('button');
+            btn.id = `taskbar-${app.id}`;
+            btn.className = 'h-8 px-3 bg-white/10 hover:bg-white/20 rounded flex items-center justify-center border-b-2 border-blue-400 transition';
+            btn.innerHTML = `<img src="${app.icon}" class="w-5 h-5">`;
+            btn.onclick = () => {
+                if (win.style.display === 'none') {
+                    win.style.display = 'flex';
+                    focusWindow(win);
+                } else if (parseInt(win.style.zIndex) === zIndexCounter) {
+                    // Minimize logic could go here
+                } else {
+                    focusWindow(win);
+                }
+            };
+            taskbarApps.appendChild(btn);
+        }
+
+        function removeTaskbarIcon(id) {
+            const btn = document.getElementById(`taskbar-${id}`);
+            if (btn) btn.remove();
+        }
+
+        // --- UTILS ---
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock-time').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('clock-date').innerText = now.toLocaleDateString();
+        }
+
+        function makeDraggable(element, handle) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+            handle.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e.preventDefault();
+                // If maximized, simple drag shouldn't work nicely unless we implement "snap out of maximize"
+                // For now, let's just allow it but it might be weird if maximized.
+                // Better UX: if maximized, don't drag, OR drag restores it.
+                if (element.dataset.isMaximized === "true") return;
+
+                // If iframe inside, show overlay to prevent mouse trapping
+                const overlay = element.querySelector('.iframe-overlay');
+                if (overlay) overlay.style.display = 'block';
+
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+                focusWindow(element);
+
+                // Opimization: Reduce shadow during drag
+                element.style.transition = 'none';
+                element.classList.remove('window-shadow');
+            }
+
+            function elementDrag(e) {
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                element.style.top = (element.offsetTop - pos2) + "px";
+                element.style.left = (element.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+                // Hide overlay
+                const overlay = element.querySelector('.iframe-overlay');
+                if (overlay) overlay.style.display = 'none';
+
+                // Restore transition and shadow
+                element.style.transition = 'all 0.2s';
+                element.classList.add('window-shadow');
+            }
+        }
+
+        function makeResizable(element, handle) {
+            let startX, startY, startWidth, startHeight;
+
+            handle.onmousedown = initDrag;
+
+            function initDrag(e) {
+                if (element.dataset.isMaximized === "true") return;
+
+                e.preventDefault();
+                startX = e.clientX;
+                startY = e.clientY;
+                startWidth = parseInt(document.defaultView.getComputedStyle(element).width, 10);
+                startHeight = parseInt(document.defaultView.getComputedStyle(element).height, 10);
+
+                const overlay = element.querySelector('.iframe-overlay');
+                if (overlay) overlay.style.display = 'block';
+
+                document.documentElement.addEventListener('mousemove', doDrag, false);
+                document.documentElement.addEventListener('mouseup', stopDrag, false);
+                focusWindow(element);
+
+                // Optimization: Reduce shadow and remove transition during resize
+                element.style.transition = 'none';
+                element.classList.remove('window-shadow');
+            }
+
+            function doDrag(e) {
+                element.style.width = (startWidth + e.clientX - startX) + 'px';
+                element.style.height = (startHeight + e.clientY - startY) + 'px';
+            }
+
+            function stopDrag(e) {
+                const overlay = element.querySelector('.iframe-overlay');
+                if (overlay) overlay.style.display = 'none';
+
+                document.documentElement.removeEventListener('mousemove', doDrag, false);
+                document.documentElement.removeEventListener('mouseup', stopDrag, false);
+
+                // Restore transition and shadow
+                element.style.transition = 'all 0.2s';
+                element.classList.add('window-shadow');
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

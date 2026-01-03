@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Aditya's Voxel Farm</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Courier New', Courier, monospace; }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; width: 20px; height: 20px;
+            border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%);
+            pointer-events: none; z-index: 2; mix-blend-mode: difference;
+        }
+        #overlay {
+            position: absolute; inset: 0; background: rgba(86, 125, 70, 0.9); color: white;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;
+        }
+        #interaction-prompt {
+            position: absolute; bottom: 20%; width: 100%; text-align: center; color: white;
+            font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #000; display: none;
+        }
+        .modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 500px; padding: 20px; background: #fff8e7; border: 8px solid #8b4513;
+            box-shadow: 10px 10px 0 #3e2723; color: #3e2723; display: none; 
+            z-index: 20; 
+            image-rendering: pixelated;
+        }
+        h2 { border-bottom: 2px solid #8b4513; padding-bottom: 10px; color: #5d4037; }
+        .modal-btn {
+            display: block; width: 100%; padding: 10px; margin-top: 20px;
+            background: #8b4513; color: white; text-align: center; cursor: pointer;
+            border: none; font-family: inherit; font-weight: bold;
+        }
+        .modal-btn:hover { background: #a1887f; }
+        
+        /* New Button Style for Overlay */
+        .overlay-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            background: #3e2723;
+            color: #fff;
+            border: 4px solid #8b4513;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .overlay-btn:hover {
+            background: #5d4037;
+            border-color: #a1887f;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+</head>
+<body>
+    <div id="crosshair"></div>
+    <div id="interaction-prompt">Press [SPACE] to Interact</div>
+    
+    <div id="overlay">
+        <h1 style="font-size: 3rem; text-shadow: 4px 4px 0 #3e2723;">ADITYA'S FARM</h1>
+        <p>WASD to Move | Double-Tap W or Shift to Sprint | Mouse to Look</p>
+        
+        <!-- Main Start Button -->
+        <button id="start-btn" class="overlay-btn">Click to Start Farming</button>
+        
+        <!-- Exit Button -->
+        <button id="exit-btn" class="overlay-btn" style="background: #8b0000; border-color: #ff0000; margin-top: 10px;">EXIT TO DESKTOP</button>
+    </div>
+
+    <!-- Modals (Updated Content) -->
+    <div id="modal-house" class="modal">
+        <h2>THE FARMHOUSE (About Me)</h2>
+        <p><strong>Hi, I'm Aditya Putra Anamta.</strong></p>
+        <p>Digital Business student & Creative Tech Specialist.</p>
+        <p>I combine design skills with code to build functional brands and web products. Currently Founder of Cakra Labs & Bifidum.co.</p>
+        <p><strong>Current Season:</strong> 5th Semester Student</p>
+        <button class="modal-btn">Close Interaction</button>
+    </div>
+    <div id="modal-barn" class="modal">
+        <h2>THE BARN (Skills & Tools)</h2>
+        <p><strong>Harvesting Tools:</strong></p>
+        <ul>
+            <li>🎨 <strong>Design:</strong> Adobe Illustrator, Photoshop, Figma, CorelDraw</li>
+            <li>💻 <strong>Dev:</strong> HTML5, CSS3, GitHub/Git, Basic Frontend</li>
+            <li>📈 <strong>Business:</strong> Project Mgmt (Trello/Notion), Social Media Marketing</li>
+            <li>🤖 <strong>AI:</strong> Midjourney, Generative Fill</li>
+        </ul>
+        <button class="modal-btn">Close Interaction</button>
+    </div>
+    <div id="modal-cow" class="modal">
+        <h2>THE DAIRY PEN (Experience)</h2>
+        <p><strong>Professional Track Record:</strong></p>
+        <ul>
+            <li>🚀 <strong>Founder - Cakra Labs:</strong> AI Automation Agency.</li>
+            <li>👔 <strong>Project Manager - SBM Group:</strong> Managing marketing across 4 units.</li>
+            <li>👕 <strong>Founder - Bifidum.co:</strong> Automotive Fashion Brand.</li>
+            <li>🎓 <strong>BEM Cyber Univ:</strong> Communication & Info Dept.</li>
+        </ul>
+        <button class="modal-btn">Close Interaction</button>
+    </div>
+    <div id="modal-crop-template" class="modal">
+        <h2 id="crop-title">CROP</h2>
+        <p id="crop-desc">Description</p>
+        <button class="modal-btn">Close Interaction</button>
+    </div>
+
+    <script>
+        // --- 1. TEXTURE GENERATOR ---
+        const createTexture = (type) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            if (type === 'grass') {
+                ctx.fillStyle = '#2d5a27'; // Dark pixelated grass
+                ctx.fillRect(0,0,64,64);
+                for(let y=0; y<64; y+=8) for(let x=0; x<64; x+=8) {
+                    const rand = Math.random();
+                    if (rand > 0.7) ctx.fillStyle = '#1e3c1a'; 
+                    else if (rand > 0.4) ctx.fillStyle = '#3e7a36'; 
+                    else ctx.fillStyle = '#2d5a27'; 
+                    ctx.fillRect(x, y, 8, 8);
+                }
+            } else if (type === 'path') {
+                ctx.fillStyle = '#8b5a2b'; ctx.fillRect(0,0,64,64);
+                for(let i=0; i<50; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#7a4e24' : '#9c6632'; ctx.fillRect(Math.random()*60, Math.random()*60, 6, 6); }
+            } else if (type === 'asphalt') {
+                ctx.fillStyle = '#333333'; ctx.fillRect(0,0,64,64);
+                for(let i=0; i<100; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#3a3a3a' : '#2a2a2a'; ctx.fillRect(Math.random()*62, Math.random()*62, 2, 2); }
+            } else if (type === 'dirt') {
+                ctx.fillStyle = '#5d4037'; ctx.fillRect(0,0,64,64);
+                for(let i=0; i<100; i++) { ctx.fillStyle = '#4e342e'; ctx.fillRect(Math.random()*64, Math.random()*64, 4, 4); }
+            } else if (type === 'tilled') {
+                ctx.fillStyle = '#3e2723'; ctx.fillRect(0,0,64,64); ctx.fillStyle = '#4e342e'; for(let y=0; y<64; y+=8) ctx.fillRect(0, y, 64, 4);
+            } else if (type === 'wood') {
+                ctx.fillStyle = '#8d6e63'; ctx.fillRect(0,0,64,64); ctx.fillStyle = '#6d4c41'; for(let i=0; i<4; i++) ctx.fillRect(10 + i*15, 0, 4, 64);
+            } else if (type === 'wood_red') {
+                ctx.fillStyle = '#b71c1c'; ctx.fillRect(0,0,64,64); ctx.fillStyle = '#c62828'; ctx.fillRect(0,0,32,64); ctx.strokeStyle = '#8b0000'; ctx.strokeRect(0,0,64,64);
+            } else if (type === 'leaves') {
+                ctx.fillStyle = '#2e7d32'; ctx.fillRect(0,0,64,64); for(let i=0; i<50; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#1b5e20' : '#388e3c'; ctx.fillRect(Math.random()*60, Math.random()*60, 8, 8); }
+            } else if (type === 'stone') {
+                ctx.fillStyle = '#9e9e9e'; ctx.fillRect(0,0,64,64); for(let i=0; i<20; i++) { ctx.fillStyle = '#757575'; ctx.fillRect(Math.random()*60, Math.random()*60, 10, 5); }
+            } else if (type === 'cow') {
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,64,64); ctx.fillStyle = '#000000'; for(let i=0; i<8; i++) ctx.fillRect(Math.random()*50, Math.random()*50, 10 + Math.random()*10, 10 + Math.random()*10);
+            } else if (type === 'chicken') {
+                ctx.fillStyle = '#f0f0f0'; ctx.fillRect(0,0,64,64); ctx.fillStyle = '#e0e0e0'; ctx.fillRect(0,0,64,64); 
+            } else if (type === 'dog') {
+                ctx.fillStyle = '#d2b48c'; ctx.fillRect(0,0,64,64);
+            } else if (type === 'horse') {
+                ctx.fillStyle = '#5d4037'; ctx.fillRect(0,0,64,64); ctx.fillStyle = '#3e2723'; for(let i=0; i<50; i++) ctx.fillRect(Math.random()*64, Math.random()*64, 2, 2);
+            } else if (type === 'pumpkin') {
+                ctx.fillStyle = '#ff7518'; ctx.fillRect(0,0,64,64); ctx.fillStyle = '#e65100'; for(let i=0; i<4; i++) ctx.fillRect(i*16, 0, 2, 64);
+            } else if (type === 'melon') {
+                ctx.fillStyle = '#4caf50'; ctx.fillRect(0,0,64,64); ctx.fillStyle = '#2e7d32'; for(let i=0; i<4; i++) ctx.fillRect(i*16, 0, 4, 64);
+            } else if (type === 'roof_shingles') {
+                ctx.fillStyle = '#5d4037'; ctx.fillRect(0,0,64,64);
+                ctx.fillStyle = '#3e2723'; 
+                for(let y=0; y<64; y+=8) { for(let x=0; x<64; x+=16) { let offset = (y/8) % 2 === 0 ? 0 : 8; ctx.fillRect(x + offset, y, 14, 6); } }
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
+            return tex;
+        };
+        const textures = {
+            grass: createTexture('grass'), dirt: createTexture('dirt'), tilled: createTexture('tilled'),
+            wood: createTexture('wood'), barn: createTexture('wood_red'), leaves: createTexture('leaves'),
+            stone: createTexture('stone'), cow: createTexture('cow'), chicken: createTexture('chicken'),
+            dog: createTexture('dog'), horse: createTexture('horse'), pumpkin: createTexture('pumpkin'),
+            melon: createTexture('melon'), roof: createTexture('roof_shingles'),
+            path: createTexture('path'), asphalt: createTexture('asphalt')
+        };
+
+        // --- 2. AUDIO & SCENE ---
+        class AudioManager {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.3; 
+                this.masterGain.connect(this.ctx.destination);
+                this.isPlaying = false;
+            }
+            async start() {
+                if(this.ctx.state === 'suspended') await this.ctx.resume();
+                if(this.isPlaying) return;
+                this.isPlaying = true;
+                this.startAmbience();
+                this.startMusic();
+            }
+            startAmbience() {
+                const playChirp = () => {
+                    if(!this.isPlaying) return;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.frequency.setValueAtTime(2000 + Math.random()*1000, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1000, this.ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+                    osc.connect(gain); gain.connect(this.masterGain); osc.start(); osc.stop(this.ctx.currentTime + 0.1);
+                    setTimeout(playChirp, 2000 + Math.random() * 5000);
+                };
+                playChirp();
+            }
+            startMusic() {
+                const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+                const playNote = () => {
+                    if(!this.isPlaying) return; 
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = notes[Math.floor(Math.random() * notes.length)];
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.1);
+                    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.0);
+                    osc.connect(gain); gain.connect(this.masterGain); osc.start(); osc.stop(this.ctx.currentTime + 2.0);
+                    setTimeout(playNote, 3000 + Math.random() * 4000);
+                };
+                playNote();
+            }
+        }
+        const audio = new AudioManager();
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 200);
+        const renderer = new THREE.WebGLRenderer({ antialias: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.BasicShadowMap;
+        document.body.appendChild(renderer.domElement);
+        
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); scene.add(ambientLight);
+        const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+        sun.position.set(50, 100, 30); sun.castShadow = true;
+        sun.shadow.mapSize.width = 2048; sun.shadow.mapSize.height = 2048;
+        scene.add(sun);
+
+        // Ground 
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ map: textures.grass }));
+        ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+        
+        const interactables = [];
+        const colliders = [];
+        function addCollider(x, z, width, depth) { colliders.push({ minX: x - width/2, maxX: x + width/2, minZ: z - depth/2, maxZ: z + depth/2 }); }
+        function checkCollision(x, z, radius = 0.5) { for (let c of colliders) { if (x + radius > c.minX && x - radius < c.maxX && z + radius > c.minZ && z - radius < c.maxZ) return true; } return false; }
+        function createBlock(x, y, z, w, h, d, tex, color=0xffffff) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshStandardMaterial({ map: tex, color: color });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y + h/2, z);
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            return mesh;
+        }
+        function createPath(x, z, width, depth, tex) {
+            const geo = new THREE.PlaneGeometry(width, depth);
+            const mat = new THREE.MeshStandardMaterial({ map: tex });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.rotation.x = -Math.PI / 2; mesh.position.set(x, 0.02, z); mesh.receiveShadow = true;
+            scene.add(mesh);
+        }
+
+        // --- 3. MOBS (Structure preserved from your file) ---
+        const mobs = [];
+        class Mob {
+            constructor(type, x, z) {
+                this.type = type; this.group = new THREE.Group(); this.group.position.set(x, 0, z);
+                if (type === 'cow') this.group.scale.set(0.85, 0.85, 0.85); else if (type === 'horse') this.group.scale.set(0.7, 0.7, 0.7); else this.group.scale.set(0.6, 0.6, 0.6);
+                this.targetPos = new THREE.Vector3(x, 0, z); this.state = 'walk'; this.idleTimer = 0;
+                if (type === 'horse') { this.walkSpeed = 2.5; this.hopFreq = 3; this.hopHeight = 0.1; } else if (type === 'dog') { this.walkSpeed = 12; this.hopFreq = 15; this.hopHeight = 0.3; } else if (type === 'chicken') { this.walkSpeed = 4; this.hopFreq = 10; this.hopHeight = 0.2; } else { this.walkSpeed = 3.5; this.hopFreq = 5; this.hopHeight = 0.1; }
+                this.legs = []; this.buildModel(); scene.add(this.group); mobs.push(this); this.pickNewTarget();
+            }
+            buildModel() {
+                if (this.type === 'cow') {
+                    this.group.add(createBlock(0, 1.5, 0, 1.6, 1.4, 2.6, textures.cow));
+                    const head = new THREE.Group(); head.position.set(0, 2.6, 1.6);
+                    head.add(createBlock(0, 0, 0, 1.2, 1.2, 1.2, textures.cow));
+                    head.add(createBlock(-0.35, 0.2, 0.61, 0.15, 0.15, 0.05, null, 0x111111)); head.add(createBlock(0.35, 0.2, 0.61, 0.15, 0.15, 0.05, null, 0x111111));
+                    head.add(createBlock(0, -0.2, 0.7, 1.2, 0.5, 0.2, null, 0x333333)); head.add(createBlock(-0.3, -0.2, 0.81, 0.1, 0.1, 0.05, null, 0x000000)); head.add(createBlock(0.3, -0.2, 0.81, 0.1, 0.1, 0.05, null, 0x000000));
+                    this.group.add(head);
+                    this.addLeg(-0.6, 0, 1, 0.4, 1.5, 0.4); this.addLeg(0.6, 0, 1, 0.4, 1.5, 0.4); this.addLeg(-0.6, 0, -1, 0.4, 1.5, 0.4); this.addLeg(0.6, 0, -1, 0.4, 1.5, 0.4);
+                    this.group.add(createBlock(0, 1.0, 0, 0.8, 0.3, 0.8, null, 0xffcccc)); 
+                    const hb = new THREE.Mesh(new THREE.BoxGeometry(3,3,4), new THREE.MeshBasicMaterial({visible:false})); hb.position.y = 1.5; hb.userData = { id: 'cow' }; this.group.add(hb); interactables.push(hb);
+                } else if (this.type === 'horse') {
+                    this.group.add(createBlock(0, 1.8, 0, 1.5, 1.5, 3.2, textures.horse));
+                    const neck = createBlock(0, 2.7, 1.8, 0.8, 1.8, 1.2, textures.horse); neck.rotation.x = 0; this.group.add(neck);
+                    const headGroup = new THREE.Group(); headGroup.position.set(0, 4.0, 2.3); 
+                    headGroup.add(createBlock(0, 0, 0, 0.9, 0.9, 1.5, textures.horse));
+                    headGroup.add(createBlock(-0.46, 0.1, 0, 0.05, 0.15, 0.15, null, 0x111111)); headGroup.add(createBlock(0.46, 0.1, 0, 0.05, 0.15, 0.15, null, 0x111111));
+                    headGroup.add(createBlock(0, -0.3, 0.76, 0.7, 0.05, 0.05, null, 0x222222)); this.group.add(headGroup);
+                    const mane = createBlock(0, 3.3, 1.4, 0.4, 1.5, 0.4, null, 0x222222); mane.rotation.x = 0; this.group.add(mane);
+                    this.group.add(createBlock(0, 2.0, -1.7, 0.3, 1.5, 0.3, null, 0x222222));
+                    this.addLeg(-0.5, 0, 1.2, 0.35, 2.0, 0.35, 0x2d1e18); this.addLeg(0.5, 0, 1.2, 0.35, 2.0, 0.35, 0x2d1e18); this.addLeg(-0.5, 0, -1.2, 0.35, 2.0, 0.35, 0x2d1e18); this.addLeg(0.5, 0, -1.2, 0.35, 2.0, 0.35, 0x2d1e18);
+                } else if (this.type === 'dog') {
+                    this.group.add(createBlock(0, 0.8, 0, 0.8, 0.7, 1.4, textures.dog));
+                    const head = new THREE.Group(); head.position.set(0, 1.5, 0.8);
+                    head.add(createBlock(0, 0, 0, 0.7, 0.7, 0.7, textures.dog));
+                    head.add(createBlock(0, -0.1, 0.4, 0.4, 0.3, 0.4, null, 0x333333)); head.add(createBlock(0, -0.05, 0.61, 0.15, 0.1, 0.05, null, 0x000000));
+                    head.add(createBlock(-0.15, 0.1, 0.36, 0.1, 0.1, 0.05, null, 0x111111)); head.add(createBlock(0.15, 0.1, 0.36, 0.1, 0.1, 0.05, null, 0x111111));
+                    head.add(createBlock(-0.3, 0.4, 0, 0.2, 0.3, 0.2, textures.dog)); head.add(createBlock(0.3, 0.4, 0, 0.2, 0.3, 0.2, textures.dog));
+                    this.group.add(head);
+                    const tail = createBlock(0, 1.2, -0.7, 0.2, 0.6, 0.2, textures.dog); tail.rotation.x = 0.5; this.group.add(tail);
+                    this.addLeg(-0.25, 0, 0.5, 0.2, 0.8, 0.2); this.addLeg(0.25, 0, 0.5, 0.2, 0.8, 0.2); this.addLeg(-0.25, 0, -0.5, 0.2, 0.8, 0.2); this.addLeg(0.25, 0, -0.5, 0.2, 0.8, 0.2);
+                } else if (this.type === 'chicken') {
+                    this.group.add(createBlock(0, 0.5, 0, 0.6, 0.5, 0.8, textures.chicken));
+                    this.group.add(createBlock(0, 1.1, 0.3, 0.3, 0.5, 0.3, textures.chicken));
+                    this.group.add(createBlock(-0.16, 1.2, 0.35, 0.05, 0.05, 0.05, null, 0x111111)); 
+                    this.group.add(createBlock(0.16, 1.2, 0.35, 0.05, 0.05, 0.05, null, 0x111111));
+                    this.group.add(createBlock(0, 1.15, 0.5, 0.1, 0.1, 0.15, null, 0xffa500)); 
+                    this.group.add(createBlock(0, 1.4, 0.3, 0.1, 0.1, 0.2, null, 0xff0000));
+                    this.addLeg(-0.15, 0, 0, 0.1, 0.5, 0.1, 0xffa500); this.addLeg(0.15, 0, 0, 0.1, 0.5, 0.1, 0xffa500);
+                }
+            }
+            addLeg(x, y, z, w, h, d, color) { const leg = createBlock(0, -h, 0, w, h, d, null, color || 0xffffff); const pivot = new THREE.Group(); pivot.position.set(x, y+h, z); pivot.add(leg); this.group.add(pivot); this.legs.push(pivot); }
+            pickNewTarget() {
+                let minX=-60,maxX=60,minZ=-60,maxZ=60;
+                if(this.type==='cow'){minX=-34;maxX=-16;minZ=16;maxZ=34;} else if(this.type==='horse'){minX=-45;maxX=-10;minZ=-30;maxZ=-10;}
+                let valid=false, attempts=0;
+                while(!valid && attempts<20){
+                    const tx=Math.random()*(maxX-minX)+minX, tz=Math.random()*(maxZ-minZ)+minZ;
+                    if(new THREE.Vector3(tx,0,tz).distanceTo(this.group.position)>5 && !checkCollision(tx,tz,1)) { this.targetPos.set(tx,0,tz); valid=true; }
+                    attempts++;
+                }
+                if(!valid) this.targetPos.copy(this.group.position);
+            }
+            update(delta, time) {
+                if(this.state==='idle'){
+                    this.idleTimer-=delta; this.group.position.y=THREE.MathUtils.lerp(this.group.position.y,0,delta*5);
+                    this.legs.forEach(l=>l.rotation.x=THREE.MathUtils.lerp(l.rotation.x,0,delta*5));
+                    if(this.idleTimer<=0){this.pickNewTarget();this.state='walk';} return;
+                }
+                const dist=this.targetPos.distanceTo(new THREE.Vector3(this.group.position.x,0,this.group.position.z));
+                if(dist<1){this.state='idle';this.idleTimer=2;return;}
+
+                const dir=new THREE.Vector3().subVectors(this.targetPos,this.group.position).normalize();
+                const nextX = this.group.position.x + dir.x * this.walkSpeed * delta;
+                const nextZ = this.group.position.z + dir.z * this.walkSpeed * delta;
+
+                // --- SMART COLLISION AVOIDANCE ---
+                if (checkCollision(nextX, nextZ, 0.5)) {
+                    this.pickNewTarget(); 
+                    return;
+                }
+
+                this.group.position.x = nextX;
+                this.group.position.z = nextZ;
+                
+                this.group.rotation.y = Math.atan2(dir.x, dir.z);
+                this.group.position.y = Math.abs(Math.sin(time*this.hopFreq))*this.hopHeight;
+                this.legs.forEach((l,i)=>l.rotation.x=Math.sin(time*this.hopFreq)*((i%2==0)?1:-1));
+            }
+        }
+
+        // --- 4. WORLD & BUILDINGS ---
+        // House
+        const houseGroup = new THREE.Group(); houseGroup.position.set(0, 0, -20);
+        houseGroup.add(createBlock(0, 0, 0, 10, 6, 8, textures.wood)); 
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(7, 4, 4), new THREE.MeshStandardMaterial({ map: textures.stone }));
+        roof.position.set(0, 8, 0); 
+        roof.rotation.y = Math.PI / 4; 
+        houseGroup.add(roof);
+        const door = createBlock(0, 0, 4.1, 2, 4, 0.2, textures.wood, 0x5d4037); door.userData = { id: 'house' }; interactables.push(door); houseGroup.add(door);
+        scene.add(houseGroup); addCollider(0, -20, 10, 8);
+
+        // Barn with Gambrel Roof
+        const barnGroup = new THREE.Group(); barnGroup.position.set(-25, 0, 0);
+        barnGroup.add(createBlock(0, 0, 0, 12, 10, 16, textures.barn));
+        function createGambrelRoof(width, depth, color) {
+            const shape = new THREE.Shape();
+            const w2 = width / 2; const h1 = 3; const h2 = 2; 
+            shape.moveTo(-w2 - 0.5, 0); shape.lineTo(-w2 * 0.6, h1); shape.lineTo(0, h1 + h2);
+            shape.lineTo(w2 * 0.6, h1); shape.lineTo(w2 + 0.5, 0); shape.lineTo(-w2 - 0.5, 0); 
+            const extrudeSettings = { steps: 1, depth: depth + 1, bevelEnabled: false };
+            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings); geometry.center(); 
+            const material = new THREE.MeshStandardMaterial({ map: textures.roof, color: color });
+            return new THREE.Mesh(geometry, material);
+        }
+        const barnRoofMesh = createGambrelRoof(12, 16, 0x5c0909);
+        barnRoofMesh.position.set(0, 12.5, 0); 
+        barnGroup.add(barnRoofMesh);
+        const barnDoor = createBlock(6.1, 0, 0, 0.2, 6, 5, textures.wood, 0xffffff); barnDoor.userData = { id: 'barn' }; interactables.push(barnDoor); barnGroup.add(barnDoor);
+        scene.add(barnGroup); addCollider(-25, 0, 12, 16);
+
+        // --- PATHS ---
+        createPath(0, 0, 8, 8, textures.path);
+        createPath(0, -12, 4, 16, textures.path);
+        createPath(-14, 0, 20, 4, textures.path);
+        createPath(12, 0, 16, 4, textures.path);
+        createPath(-10, 12, 4, 24, textures.path);
+        createPath(-5, 4, 10, 4, textures.path); 
+        createPath(0, 26, 6, 44, textures.path);
+        createPath(0, 55, 300, 15, textures.asphalt);
+
+        // --- TREES ---
+        function createRealisticTree(x, z) {
+            const group = new THREE.Group(); group.position.set(x, 0, z);
+            group.add(createBlock(0, 0, 0, 1, 5, 1, textures.wood));
+            const leafPos = [[0,4,0], [1,4,0], [-1,4,0], [0,4,1], [0,4,-1], [0.5,5,0.5], [-0.5,5,-0.5], [0,5.5,0]];
+            leafPos.forEach(pos => group.add(createBlock(pos[0], pos[1], pos[2], 1.5, 1.2, 1.5, textures.leaves)));
+            scene.add(group); addCollider(x, z, 1, 1);
+        }
+        function isSafeForTree(x, z) {
+            if (z > 40) return false; 
+            if (x > -15 && x < 15 && z > -30 && z < -10) return false;
+            if (x < -15 && z > -10 && z < 10) return false;
+            if (x > -10 && x < 10 && z > -20 && z < 50) return false;
+            if (x > 10 && z > -5 && z < 15) return false;
+            return true;
+        }
+        for(let i=0; i<60; i++) { 
+            const x = (Math.random() - 0.5) * 180; const z = (Math.random() - 0.5) * 180; 
+            if (isSafeForTree(x, z)) createRealisticTree(x, z); 
+        }
+
+        // --- CORN FIELD ---
+        const cornFieldGroup = new THREE.Group(); cornFieldGroup.position.set(0, 0, 85); 
+        const cornSoil = new THREE.Mesh(new THREE.PlaneGeometry(100, 40), new THREE.MeshStandardMaterial({ map: textures.tilled }));
+        cornSoil.rotation.x = -Math.PI / 2; cornSoil.receiveShadow = true; cornFieldGroup.add(cornSoil);
+        for(let x=-45; x<45; x+=4) for(let z=-15; z<15; z+=4) {
+            if(Math.random() > 0.3) {
+                const stalk = createBlock(x + Math.random(), 0, z + Math.random(), 0.2, 2.5, 0.2, textures.grass);
+                const cob = createBlock(x + Math.random(), 1.8, z + Math.random(), 0.4, 0.8, 0.4, null, 0xffd700);
+                cornFieldGroup.add(stalk); cornFieldGroup.add(cob);
+            }
+        }
+        scene.add(cornFieldGroup);
+
+        // --- GATE ---
+        const gateGroup = new THREE.Group(); gateGroup.position.set(0, 0, 48);
+        gateGroup.add(createBlock(-4, 0, 0, 1, 4, 1, textures.wood)); gateGroup.add(createBlock(4, 0, 0, 1, 4, 1, textures.wood));
+        gateGroup.add(createBlock(0, 3, 0, 9, 0.5, 0.5, textures.wood));
+        gateGroup.add(createBlock(0, 3.0, 0.4, 4, 1, 0.2, textures.wood)); // Sign
+        scene.add(gateGroup); addCollider(-4, 48, 1, 1); addCollider(4, 48, 1, 1);
+
+        // Pen Fence
+        const penGroup = new THREE.Group(); penGroup.position.set(-25, 0, 25);
+        for(let x=-10; x<=10; x+=5) { penGroup.add(createBlock(x, 0, -10, 0.5, 2, 0.5, textures.wood)); penGroup.add(createBlock(x, 0, 10, 0.5, 2, 0.5, textures.wood)); if(x<10) { penGroup.add(createBlock(x+2.5, 1, -10, 5, 0.2, 0.2, textures.wood)); penGroup.add(createBlock(x+2.5, 1, 10, 5, 0.2, 0.2, textures.wood)); } }
+        for(let z=-10; z<=10; z+=5) { penGroup.add(createBlock(-10, 0, z, 0.5, 2, 0.5, textures.wood)); penGroup.add(createBlock(10, 0, z, 0.5, 2, 0.5, textures.wood)); if(z<10) { penGroup.add(createBlock(-10, 1, z+2.5, 0.2, 0.2, 5, textures.wood)); penGroup.add(createBlock(10, 1, z+2.5, 0.2, 0.2, 5, textures.wood)); } }
+        scene.add(penGroup); addCollider(-25, 15, 20, 1); addCollider(-25, 35, 20, 1); addCollider(-35, 25, 1, 20); addCollider(-15, 25, 1, 20);
+
+        // Mobs
+        new Mob('cow', -25, 25); new Mob('cow', -28, 22); new Mob('cow', -22, 28); new Mob('cow', -26, 30); new Mob('cow', -20, 20);
+        new Mob('dog', 10, 10); new Mob('dog', -5, -10);
+        new Mob('horse', -40, -20); new Mob('horse', -35, -25); new Mob('horse', -30, -15);
+        new Mob('chicken', 5, 5); new Mob('chicken', 8, 6); new Mob('chicken', 4, 8); new Mob('chicken', 15, 0); new Mob('chicken', 12, -5); new Mob('chicken', -5, 15);
+
+        // Project Crops (Updated with CV Data)
+        const fieldGroup = new THREE.Group(); fieldGroup.position.set(20, 0.1, 5);
+        const soil = new THREE.Mesh(new THREE.PlaneGeometry(15, 20), new THREE.MeshStandardMaterial({ map: textures.tilled }));
+        soil.rotation.x = -Math.PI / 2; soil.receiveShadow = true; fieldGroup.add(soil);
+        const projects = [ 
+            { id: 'p1', name: 'Cakra Labs', desc: 'AI Automation Agency website & workflows.', type: 'corn' }, 
+            { id: 'p2', name: 'Bifidum.co', desc: 'Automotive Fashion Brand Rebranding.', type: 'pumpkin' }, 
+            { id: 'p3', name: 'SBM Group', desc: 'Corporate Website & Marketing.', type: 'melon' }, 
+            { id: 'p4', name: 'FinShield', desc: 'Financial Prototype (HTML/CSS).', type: 'carrot' } 
+        ];
+        projects.forEach((proj, index) => {
+            const x = (index % 2) * 5 - 2.5; const z = Math.floor(index / 2) * 5 - 5;
+            const cropGroup = new THREE.Group(); cropGroup.position.set(x, 0, z);
+            if(proj.type === 'corn') { cropGroup.add(createBlock(0, 0, 0, 0.2, 2, 0.2, textures.grass)); cropGroup.add(createBlock(0, 1.8, 0, 0.4, 0.8, 0.4, null, 0xffd700)); }
+            else if (proj.type === 'pumpkin') { cropGroup.add(createBlock(0, 0, 0, 1, 0.8, 1, textures.pumpkin)); cropGroup.add(createBlock(0, 0.8, 0, 0.2, 0.2, 0.2, textures.grass)); }
+            else if (proj.type === 'melon') { cropGroup.add(createBlock(0, 0, 0, 0.9, 0.9, 0.9, textures.melon)); }
+            else { cropGroup.add(createBlock(0, 0, 0, 0.4, 0.1, 0.4, null, 0xffa500)); cropGroup.add(createBlock(0, 0.1, 0, 0.6, 0.6, 0.6, textures.leaves)); }
+            const hb = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2, 1.5), new THREE.MeshBasicMaterial({visible:false}));
+            hb.userData = { id: 'crop', data: proj }; interactables.push(hb); cropGroup.add(hb); fieldGroup.add(cropGroup);
+        });
+        scene.add(fieldGroup);
+
+        // --- 5. LOGIC & LOOP ---
+        let isInteracting = false;
+        const controls = new THREE.PointerLockControls(camera, document.body);
+        const velocity = new THREE.Vector3(); const direction = new THREE.Vector3();
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, sprint = false;
+        let lastWPressTime = 0; let doubleTapSprint = false;
+
+        const overlay = document.getElementById('overlay');
+        const startBtn = document.getElementById('start-btn');
+        const exitBtn = document.getElementById('exit-btn');
+
+        // Main overlay interaction
+        // startBtn.addEventListener('click', () => { 
+        //     audio.start(); 
+        //     setTimeout(() => controls.lock(), 50); 
+        // });
+
+        // MODIFIED: Start button specifically locks controls
+        startBtn.onclick = () => {
+            audio.start();
+            setTimeout(() => controls.lock(), 50);
+        };
+
+        // NEW: Exit button logic
+        exitBtn.onclick = () => {
+            // Redirect to desktop.html to simulate "exiting" the game OS
+            window.location.href = "desktop.html";
+        };
+
+        controls.addEventListener('unlock', () => { if (!isInteracting) overlay.style.display = 'flex'; });
+        controls.addEventListener('lock', () => { overlay.style.display = 'none'; closeAllModals(); });
+
+        document.addEventListener('keydown', (e) => {
+            switch (e.code) {
+                case 'ArrowUp': case 'KeyW': if (!e.repeat) { const now = performance.now(); if (now - lastWPressTime < 500) doubleTapSprint = true; lastWPressTime = now; } moveForward = true; break;
+                case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
+                case 'ArrowDown': case 'KeyS': moveBackward = true; break;
+                case 'ArrowRight': case 'KeyD': moveRight = true; break;
+                case 'ShiftLeft': sprint = true; break;
+                case 'Space': checkInteraction(); break;
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            switch (e.code) {
+                case 'ArrowUp': case 'KeyW': moveForward = false; doubleTapSprint = false; break;
+                case 'ArrowLeft': case 'KeyA': moveLeft = false; break;
+                case 'ArrowDown': case 'KeyS': moveBackward = false; break;
+                case 'ArrowRight': case 'KeyD': moveRight = false; break;
+                case 'ShiftLeft': sprint = false; break;
+            }
+        });
+
+        const raycaster = new THREE.Raycaster();
+        const prompt = document.getElementById('interaction-prompt');
+        let currentIntersect = null;
+
+        function updateRaycaster() {
+            raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+            const intersects = raycaster.intersectObjects(interactables);
+            if (intersects.length > 0 && intersects[0].distance < 8) {
+                currentIntersect = intersects[0].object; prompt.style.display = 'block';
+                const id = currentIntersect.userData.id;
+                if(id === 'crop') prompt.innerText = "Harvest " + currentIntersect.userData.data.name;
+                else if (id === 'house') prompt.innerText = "Enter Farmhouse";
+                else if (id === 'barn') prompt.innerText = "Enter Barn";
+                else if (id === 'cow') prompt.innerText = "Talk to Cow";
+            } else { currentIntersect = null; prompt.style.display = 'none'; }
+        }
+
+        function checkInteraction() {
+            if (currentIntersect) {
+                isInteracting = true; controls.unlock(); prompt.style.display = 'none';
+                const id = currentIntersect.userData.id;
+                if (id === 'crop') {
+                    const template = document.getElementById('modal-crop-template');
+                    template.querySelector('#crop-title').innerText = currentIntersect.userData.data.name;
+                    template.querySelector('#crop-desc').innerText = currentIntersect.userData.data.desc;
+                    template.style.display = 'block'; setupCloseBtn(template);
+                } else {
+                    const el = document.getElementById(`modal-${id}`);
+                    if(el) { el.style.display = 'block'; setupCloseBtn(el); }
+                }
+            }
+        }
+        function setupCloseBtn(modal) {
+            const btn = modal.querySelector('.modal-btn');
+            btn.onclick = (e) => { e.stopPropagation(); modal.style.display = 'none'; isInteracting = false; setTimeout(() => controls.lock(), 100); };
+        }
+        function closeAllModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+
+        let prevTime = performance.now();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const now = performance.now();
+            const rawDelta = (now - prevTime) / 1000;
+            prevTime = now;
+            const delta = Math.min(rawDelta, 0.1); 
+            const time = now * 0.001;
+
+            mobs.forEach(mob => mob.update(delta, time));
+
+            if (controls.isLocked) {
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize();
+
+                const isSprinting = sprint || doubleTapSprint;
+                const speed = isSprinting ? 60.0 : 30.0; 
+                
+                if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
+
+                const oldX = camera.position.x;
+                const oldZ = camera.position.z;
+
+                controls.moveRight(-velocity.x * delta);
+                controls.moveForward(-velocity.z * delta);
+                
+                if (checkCollision(camera.position.x, camera.position.z, 0.5)) {
+                    camera.position.x = oldX;
+                    camera.position.z = oldZ;
+                    velocity.x = 0; velocity.z = 0;
+                }
+
+                if (moveForward || moveBackward || moveLeft || moveRight) {
+                    camera.position.y = 2 + Math.sin(now * (isSprinting ? 0.03 : 0.02)) * 0.1;
+                } else { camera.position.y = 2; }
+                
+                const targetFOV = isSprinting ? 80 : 70;
+                if (Math.abs(camera.fov - targetFOV) > 0.1) {
+                    camera.fov += (targetFOV - camera.fov) * 0.1;
+                    camera.updateProjectionMatrix();
+                }
+                updateRaycaster();
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
